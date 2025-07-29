@@ -144,3 +144,70 @@ def create_synthetic_spectrogram_loaders(config, batch_size=None):
     )
     
     return train_loader, test_loader, train_dataset, test_dataset
+
+
+def create_synthetic_spectrograms(num_samples, mel_bins, seq_len):
+    """
+    Create synthetic spectrogram data compatible with the notebook format
+    Returns list of spectrograms with shape (seq_len, mel_bins)
+    """
+    spectrograms = []
+    
+    for i in range(num_samples):
+        # Create a synthetic spectrogram with the specified dimensions
+        # Total length is seq_len (which should be seq_len * 3 for full sequence)
+        spectrogram = np.random.rand(seq_len, mel_bins) * 0.5
+        
+        # Add some structure to make it more realistic
+        # Create three segments: preceding, transition, following
+        segment_len = seq_len // 3
+        
+        if seq_len % 3 == 0:
+            # Perfect division
+            preceding_len = segment_len
+            transition_len = segment_len
+            following_len = segment_len
+        else:
+            # Handle remainder
+            preceding_len = segment_len
+            transition_len = segment_len
+            following_len = seq_len - (2 * segment_len)
+        
+        # Preceding segment: gradual fade-in pattern
+        for t in range(preceding_len):
+            fade_factor = t / preceding_len
+            spectrogram[t] *= fade_factor * 0.6
+            
+        # Transition segment: blend pattern
+        transition_start = preceding_len
+        for t in range(transition_len):
+            blend_factor = t / transition_len
+            base_intensity = 0.3 + 0.4 * blend_factor
+            spectrogram[transition_start + t] *= base_intensity
+            
+        # Following segment: different frequency emphasis
+        following_start = preceding_len + transition_len
+        for t in range(following_len):
+            spectrogram[following_start + t] *= 0.7
+            # Emphasize lower frequencies
+            spectrogram[following_start + t, :mel_bins//2] *= 1.3
+        
+        # Add some coherent frequency patterns
+        if i % 3 == 0:  # Low frequency emphasis
+            spectrogram[:, :mel_bins//3] *= 1.4
+        elif i % 3 == 1:  # Mid frequency emphasis
+            spectrogram[:, mel_bins//3:2*mel_bins//3] *= 1.3
+        else:  # High frequency emphasis
+            spectrogram[:, 2*mel_bins//3:] *= 1.2
+        
+        # Add some temporal coherence
+        for t in range(1, seq_len):
+            # Small correlation with previous time step
+            spectrogram[t] = 0.7 * spectrogram[t] + 0.3 * spectrogram[t-1]
+        
+        # Ensure values are in reasonable range
+        spectrogram = np.clip(spectrogram, 0, 1)
+        
+        spectrograms.append(spectrogram)
+    
+    return spectrograms
