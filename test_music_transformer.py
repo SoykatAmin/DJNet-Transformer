@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from music_transformer import (
     Config,
     MusicTransitionTransformer,
-    SpectrogramProcessor,
+    AudioProcessor,
     create_synthetic_spectrogram_loaders,
     MusicTransitionTrainer
 )
