@@ -7,7 +7,7 @@ import librosa
 import soundfile as sf
 
 
-class SpectrogramProcessor:
+class AudioProcessor:
     """Handles conversion between audio and spectrogram representation for DJNet dataset"""
     
     def __init__(self, config):
@@ -15,7 +15,8 @@ class SpectrogramProcessor:
         self.sr = config.sample_rate
         self.n_fft = config.n_fft
         self.hop_length = config.hop_length
-        self.n_mels = config.n_mels
+        # Use mel_bins if available, otherwise fall back to n_mels
+        self.n_mels = getattr(config, 'mel_bins', config.n_mels)
         
     def audio_to_spectrogram(self, audio_path, duration=None):
         """Convert audio file to mel-spectrogram"""
@@ -42,6 +43,30 @@ class SpectrogramProcessor:
             
         except Exception as e:
             print(f"Error processing {audio_path}: {e}")
+            return None
+    
+    def audio_to_mel_spectrogram(self, audio_array):
+        """Convert audio array to mel-spectrogram (expected by notebook)"""
+        try:
+            # Convert to mel-spectrogram
+            mel_spec = librosa.feature.melspectrogram(
+                y=audio_array, 
+                sr=self.sr,
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+                n_mels=self.n_mels
+            )
+            
+            # Convert to log scale (dB)
+            mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+            
+            # Normalize to [0, 1] range
+            mel_spec_normalized = (mel_spec_db - mel_spec_db.min()) / (mel_spec_db.max() - mel_spec_db.min())
+            
+            return mel_spec_normalized.T  # Shape: (time_frames, n_mels)
+            
+        except Exception as e:
+            print(f"Error processing audio array: {e}")
             return None
     
     def process_audio_array(self, audio_array):

@@ -10,12 +10,16 @@ class Config:
     n_fft = 2048        # FFT window size
     hop_length = 512    # Hop length for STFT
     n_mels = 128        # Number of mel frequency bins
+    mel_bins = 128      # Alias for n_mels (for compatibility)
+    seq_len = 128       # Sequence length for each segment
     max_sequence_length = 512  # Maximum length for input sequences
     
     # Model Architecture
     d_model = 512  # Embedding dimension
     n_heads = 8    # Number of attention heads
+    num_heads = 8  # Alias for n_heads (for compatibility)
     n_layers = 6   # Number of transformer layers
+    num_layers = 6 # Alias for n_layers (for compatibility)
     d_ff = 2048    # Feed-forward dimension
     dropout = 0.1  # Dropout rate
     
