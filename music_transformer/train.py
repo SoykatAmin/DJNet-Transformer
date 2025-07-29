@@ -138,8 +138,8 @@ class MusicTransitionTrainer:
         self.train_history = []
         self.val_history = []
         
-    def train_step(self, batch):
-        """Single training step"""
+    def train_step_batch(self, batch):
+        """Single training step with batch dictionary"""
         self.model.train()
         
         # Move data to device
@@ -194,7 +194,7 @@ class MusicTransitionTrainer:
         # Training loop
         train_pbar = tqdm(train_loader, desc="Training")
         for batch in train_pbar:
-            loss_dict = self.train_step(batch)
+            loss_dict = self.train_step_batch(batch)
             train_losses.append(loss_dict)
             
             # Update progress bar
@@ -304,3 +304,40 @@ class MusicTransitionTrainer:
         
         print(f"Checkpoint loaded: {checkpoint_path}")
         return checkpoint['epoch']
+    
+    def train_step(self, preceding, following, target):
+        """
+        Simple training step interface for notebook compatibility
+        Args:
+            preceding: [batch, time, mels] - preceding segment
+            following: [batch, time, mels] - following segment  
+            target: [batch, time, mels] - target transition
+        Returns:
+            float: loss value
+        """
+        self.model.train()
+        
+        # Zero gradients
+        self.optimizer.zero_grad()
+        
+        # Forward pass with teacher forcing
+        output = self.model(preceding, following, target)
+        
+        # Simple MSE loss for notebook compatibility
+        loss = F.mse_loss(output, target)
+        
+        # Backward pass
+        loss.backward()
+        
+        # Gradient clipping
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+        
+        # Update parameters
+        self.optimizer.step()
+        self.scheduler.step()
+        
+        return loss.item()
+
+
+# Alias for compatibility with notebook
+Trainer = MusicTransitionTrainer
